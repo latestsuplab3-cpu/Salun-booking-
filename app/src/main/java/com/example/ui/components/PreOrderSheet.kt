@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -52,14 +53,27 @@ fun PreOrderSheet(
     val remaining = Math.round((total - advance) * 100.0) / 100.0
 
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    val displayFormat = SimpleDateFormat("EEE, dd MMM", Locale.getDefault())
+    val dayOfWeekFormat = SimpleDateFormat("EEE", Locale.getDefault())
+    val dayNumberFormat = SimpleDateFormat("dd", Locale.getDefault())
+    val monthFormat = SimpleDateFormat("MMM", Locale.getDefault())
 
-    val dateOptions = remember(language) {
-        val list = mutableListOf<Pair<String, String>>()
-        for (i in 0..4) {
+    data class CalendarDayItem(
+        val dateStr: String,
+        val dayOfWeek: String,
+        val dayNumber: String,
+        val month: String,
+        val relativeLabel: String?
+    )
+
+    val calendarDays = remember(language) {
+        val list = mutableListOf<CalendarDayItem>()
+        for (i in 0..13) {
             val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, i) }
             val formatted = dateFormat.format(cal.time)
-            val dayName = when (i) {
+            val dow = dayOfWeekFormat.format(cal.time)
+            val dayNum = dayNumberFormat.format(cal.time)
+            val mon = monthFormat.format(cal.time)
+            val relLabel = when (i) {
                 0 -> when (language) {
                     AppLanguage.ENGLISH -> "Today"
                     AppLanguage.HINDI -> "आज"
@@ -70,10 +84,9 @@ fun PreOrderSheet(
                     AppLanguage.HINDI -> "कल"
                     AppLanguage.BENGALI -> "আগামীকাল"
                 }
-                else -> displayFormat.format(cal.time)
+                else -> null
             }
-            val display = if (i <= 1) "$dayName (${displayFormat.format(cal.time)})" else dayName
-            list.add(Pair(formatted, display))
+            list.add(CalendarDayItem(formatted, dow, dayNum, mon, relLabel))
         }
         list
     }
@@ -134,42 +147,84 @@ fun PreOrderSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Step 1: Date selection
-            Text(
-                text = StringRes.step1Date.tr(language),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            // Step 1: Date selection (Single-line horizontal calendar)
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = StringRes.step1Date.tr(language),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                val selectedDayItem = calendarDays.find { it.dateStr == selectedDate }
+                if (selectedDayItem != null) {
+                    Text(
+                        text = "${selectedDayItem.dayOfWeek}, ${selectedDayItem.dayNumber} ${selectedDayItem.month}",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = AmberPrimary
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                dateOptions.take(3).forEach { (dateStr, label) ->
-                    val isSelected = dateStr == selectedDate
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onDateChange(dateStr) },
-                        label = {
-                            Text(
-                                text = label,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AmberPrimary,
-                            selectedLabelColor = Color(0xFF0F172A),
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            labelColor = MaterialTheme.colorScheme.onSurface
+                calendarDays.forEach { dayItem ->
+                    val isSelected = dayItem.dateStr == selectedDate
+                    Card(
+                        modifier = Modifier
+                            .width(68.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onDateChange(dayItem.dateStr) }
+                            .testTag("cal_day_${dayItem.dateStr}"),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) AmberPrimary else MaterialTheme.colorScheme.surfaceVariant
                         ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = isSelected,
-                            borderColor = DarkBorder,
-                            selectedBorderColor = AmberPrimary
+                        border = BorderStroke(
+                            width = if (isSelected) 1.5.dp else 1.dp,
+                            color = if (isSelected) AmberDark else DarkBorder
                         )
-                    )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = dayItem.relativeLabel ?: dayItem.dayOfWeek,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 11.sp
+                                ),
+                                color = if (isSelected) Color(0xFF0F172A) else TextSecondary,
+                                maxLines = 1
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = dayItem.dayNumber,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 17.sp
+                                ),
+                                color = if (isSelected) Color(0xFF0F172A) else MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = dayItem.month,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = if (isSelected) Color(0xFF1E293B) else TextMuted
+                            )
+                        }
+                    }
                 }
             }
 
