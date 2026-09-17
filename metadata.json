@@ -1,0 +1,6 @@
+{
+  "name": "Salon Booking",
+  "description": "Smart Salon Booking & Management app with Customer & Barber Panels, Pre-orders, 50-55% Advance Payment, Reviews, and Multi-language support (Bengali, English, Hindi).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
