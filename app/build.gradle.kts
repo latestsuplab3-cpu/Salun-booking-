@@ -2,7 +2,6 @@ import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesS
 
 plugins {
   alias(libs.plugins.android.application) 
-  id("com.google.gms.google-services")
   alias(libs.plugins.roborazzi)
   alias(libs.plugins.secrets) 
   alias(libs.plugins.google.services)
