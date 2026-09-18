@@ -24,16 +24,39 @@ import com.example.ui.screens.LoginSelectorScreen
 import com.example.ui.screens.MasterAdminScreen
 import com.example.ui.theme.SalonAppTheme
 import com.example.ui.viewmodel.SalonViewModel
-
-class MainActivity : ComponentActivity() {
+import com.google.firebase.auth.FirebaseAuth
+class MainActivity : ComponentActivity() {private lateinit var auth:FirebaseAuth
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        super.onCreate(savedInstanceState) 
+        auth = FirebaseAuth.getInstance()
         enableEdgeToEdge()
-        setContent {
-            SalonAppTheme {
-                val viewModel: SalonViewModel = viewModel()
-                SalonAppMain(viewModel)
+        setContent 
+        SalonAppTheme{
+        val viewModel: SalonViewModel = viewModel)
+            SalonAppMain(viewModel) }
             }
+            val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+    override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+        //{ Code implementation for automatic verification success
+    }val options = PhoneAuthOptions.newBuilder(auth)
+    .setPhoneNumber("+91 9547625360")
+    .setTimeout(60L, TimeUnit.SECONDS)
+    .setActivity(this)
+    .setCallbacks(callbacks)
+    .build()
+PhoneAuthProvider.verifyPhoneNumber(options)
+    
+PhoneAuthProvider.verifyPhoneNumber(options)
+
+
+    override fun onVerificationFailed(e: FirebaseException) {
+        // Code implementation for handling error cases
+    }
+
+    override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
+        // Code implementation for saving verification ID and prompting for OTP input
+    }
+}
         }
     }
 }
