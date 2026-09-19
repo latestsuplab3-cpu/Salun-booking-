@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.StringRes
 import com.example.ui.localization.tr
+import com.example.ui.components.FirebaseOtpDialog
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.SalonViewModel
 
@@ -62,6 +63,7 @@ fun SalonOwnerLoginScreen(
 
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showFirebaseOtpDialog by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
 
@@ -476,6 +478,48 @@ fun SalonOwnerLoginScreen(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+                    Text(
+                        text = "  OR / বা  ",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+                }
+
+                OutlinedButton(
+                    onClick = { showFirebaseOtpDialog = true },
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, AccentBronze),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("btn_salon_owner_otp_login")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhoneAndroid,
+                        contentDescription = null,
+                        tint = AccentBronze,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = when (language) {
+                            AppLanguage.ENGLISH -> "Log in with Firebase Phone OTP"
+                            AppLanguage.HINDI -> "Firebase Phone OTP से लॉगिन करें"
+                            else -> "Firebase Phone OTP দিয়ে লগইন করুন"
+                        },
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp
+                    )
+                }
             }
         }
 
@@ -633,5 +677,19 @@ fun SalonOwnerLoginScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+
+    if (showFirebaseOtpDialog) {
+        FirebaseOtpDialog(
+            targetRole = "BARBER",
+            initialPhone = phoneInput.ifBlank { "01700000000" },
+            salonId = salonIdInput.ifBlank { "SALON-101" },
+            language = language,
+            viewModel = viewModel,
+            onDismiss = { showFirebaseOtpDialog = false },
+            onLoginSuccess = {
+                showFirebaseOtpDialog = false
+            }
+        )
     }
 }

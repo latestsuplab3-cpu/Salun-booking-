@@ -41,8 +41,8 @@ class SalonRepository(private val database: SalonDatabase) {
     suspend fun createBooking(booking: BookingEntity): Long = withContext(Dispatchers.IO) {
         val bookingId = database.bookingDao().insertBooking(booking)
         // Also automatically notify the Barber!
-        val notifyTitle = "নতুন বুকিং! #${bookingId}"
-        val notifyMsg = "${booking.customerName} (${booking.customerPhone}) ${booking.serviceNames} এর জন্য ${booking.timeSlot} (${booking.bookingDate}) বুক করেছেন। অগ্রিম ৫৫% (₹${booking.advancePaid}) জমা হয়েছে।"
+        val notifyTitle = "New Booking! #$bookingId"
+        val notifyMsg = "${booking.customerName} (${booking.customerPhone}) booked ${booking.serviceNames} for ${booking.timeSlot} (${booking.bookingDate}). 55% Advance (₹${booking.advancePaid}) received."
         database.notificationDao().insertNotification(
             NotificationEntity(
                 recipientRole = "BARBER",
@@ -59,13 +59,13 @@ class SalonRepository(private val database: SalonDatabase) {
         database.bookingDao().updateBookingStatus(bookingId, newStatus)
         // Notify Customer about status change
         val title = when (newStatus) {
-            "CONFIRMED" -> "বুকিং নিশ্চিত হয়েছে! (Confirmed)"
-            "IN_PROGRESS" -> "আপনার সেবা চলছে! (In Progress)"
-            "COMPLETED" -> "সেবা সম্পন্ন হয়েছে! (Completed)"
-            "CANCELLED" -> "বুকিং বাতিল করা হয়েছে (Cancelled)"
-            else -> "বুকিং আপডেট #$bookingId"
+            "CONFIRMED" -> "Booking Confirmed! #$bookingId"
+            "IN_PROGRESS" -> "Service In Progress! #$bookingId"
+            "COMPLETED" -> "Service Completed! #$bookingId"
+            "CANCELLED" -> "Booking Cancelled #$bookingId"
+            else -> "Booking Update #$bookingId"
         }
-        val message = "আপনার বুকিং #${bookingId} স্ট্যাটাস: $newStatus। সেলুনে সময়মতো আসার জন্য ধন্যবাদ।"
+        val message = "Your booking #$bookingId status: $newStatus. Thank you for choosing our salon."
         database.notificationDao().insertNotification(
             NotificationEntity(
                 recipientRole = "CUSTOMER",
@@ -84,8 +84,8 @@ class SalonRepository(private val database: SalonDatabase) {
         database.notificationDao().insertNotification(
             NotificationEntity(
                 recipientRole = "BARBER",
-                title = "নতুন কাস্টমার রিভিউ! ★ ${review.rating}/5",
-                message = "${review.customerName} লিখেছেন: \"${review.comment}\"",
+                title = "New Customer Review! ★ ${review.rating}/5",
+                message = "${review.customerName} reviewed: \"${review.comment}\"",
                 bookingId = review.bookingId
             )
         )
@@ -214,16 +214,16 @@ class SalonRepository(private val database: SalonDatabase) {
             // Seed default users for quick testing & immediate login
             database.userDao().insertUser(
                 UserEntity(
-                    phone = "01700000000",
-                    name = "উস্তাদ নাপিত (Saloon Master)",
+                    phone = "9876543210",
+                    name = "Rajesh Sharma (Salon Master)",
                     password = "123",
                     role = "BARBER"
                 )
             )
             database.userDao().insertUser(
                 UserEntity(
-                    phone = "01800000000",
-                    name = "সুমন ইসলাম (Customer)",
+                    phone = "9800000000",
+                    name = "Rahul Sharma (Customer)",
                     password = "123",
                     role = "CUSTOMER"
                 )
@@ -233,18 +233,18 @@ class SalonRepository(private val database: SalonDatabase) {
             database.reviewDao().insertReview(
                 ReviewEntity(
                     bookingId = 101,
-                    customerName = "তানভীর আহমেদ",
-                    customerPhone = "01711223344",
+                    customerName = "Vikram Malhotra",
+                    customerPhone = "9811223344",
                     rating = 5,
-                    comment = "চুল কাটা ও দাড়ি শেভ অসাধারণ হয়েছে! সার্ভিস খুব ফাস্ট ও যত্নবান।",
-                    serviceName = "চুল কাটা ও দাড়ি শেভ"
+                    comment = "Haircut & beard styling was outstanding! Very fast and attentive service.",
+                    serviceName = "Haircut & Beard Styling"
                 )
             )
             database.reviewDao().insertReview(
                 ReviewEntity(
                     bookingId = 102,
                     customerName = "Rahul Sharma",
-                    customerPhone = "09876543210",
+                    customerPhone = "9800000000",
                     rating = 5,
                     comment = "Best facial treatment experience. Clean ambience and polite barber!",
                     serviceName = "Facial Glow & Cleanup"
@@ -255,8 +255,30 @@ class SalonRepository(private val database: SalonDatabase) {
             database.notificationDao().insertNotification(
                 NotificationEntity(
                     recipientRole = "BARBER",
-                    title = "স্বাগতম সেলুন প্যানেলে!",
-                    message = "আপনার সেলুন অ্যাপ চালু হয়েছে। এখানে নতুন বুকিং এর নোটিফিকেশন আসবে।"
+                    title = "Welcome to Salon Panel!",
+                    message = "Your salon management system is ready. Live booking notifications will appear here."
+                )
+            )
+        }
+
+        // Ensure Indian test users are always present
+        if (database.userDao().getUserByPhone("9876543210") == null) {
+            database.userDao().insertUser(
+                UserEntity(
+                    phone = "9876543210",
+                    name = "Rajesh Sharma (Salon Master)",
+                    password = "123",
+                    role = "BARBER"
+                )
+            )
+        }
+        if (database.userDao().getUserByPhone("9800000000") == null) {
+            database.userDao().insertUser(
+                UserEntity(
+                    phone = "9800000000",
+                    name = "Rahul Sharma (Customer)",
+                    password = "123",
+                    role = "CUSTOMER"
                 )
             )
         }
@@ -268,8 +290,8 @@ class SalonRepository(private val database: SalonDatabase) {
                 SalonLicenseEntity(
                     salonId = "SALON-101",
                     salonName = "Style Master Salon",
-                    ownerName = "Mohammad Ali (Owner)",
-                    ownerPhone = "01700000000",
+                    ownerName = "Rajesh Sharma (Owner)",
+                    ownerPhone = "9876543210",
                     password = "123",
                     address = "Shop #12, City Center Mall",
                     isActive = true
@@ -279,13 +301,21 @@ class SalonRepository(private val database: SalonDatabase) {
                 SalonLicenseEntity(
                     salonId = "SALON-202",
                     salonName = "Royal Grooming Studio",
-                    ownerName = "Rajesh Kumar",
-                    ownerPhone = "9876543210",
+                    ownerName = "Rajesh Kumar (Owner)",
+                    ownerPhone = "9876543211",
                     password = "pass",
                     address = "Market Square, Sector 4",
                     isActive = true
                 )
             )
+        } else {
+            // Update SALON-101 if it has old phone
+            val lic101 = database.salonLicenseDao().getLicenseById("SALON-101")
+            if (lic101 != null && lic101.ownerPhone.startsWith("01")) {
+                database.salonLicenseDao().insertLicense(
+                    lic101.copy(ownerPhone = "9876543210", ownerName = "Rajesh Sharma (Owner)")
+                )
+            }
         }
     }
 }

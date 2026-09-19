@@ -119,7 +119,12 @@ fun ReviewDialog(
                     Button(
                         onClick = {
                             if (comment.isNotBlank() || rating > 0) {
-                                onSubmit(rating, if (comment.isBlank()) "দারুণ সেবা!" else comment)
+                                val defaultComment = when (language) {
+                                    AppLanguage.BENGALI -> "দারুণ সেবা!"
+                                    AppLanguage.HINDI -> "बहुत बढ़िया सेवा!"
+                                    else -> "Great service!"
+                                }
+                                onSubmit(rating, if (comment.isBlank()) defaultComment else comment)
                             }
                         },
                         modifier = Modifier

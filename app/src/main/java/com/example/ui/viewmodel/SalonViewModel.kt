@@ -171,25 +171,25 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
 
             if (trimmedName.isBlank()) {
                 onError(when (lang) {
-                    AppLanguage.ENGLISH -> "Please enter your full name"
+                    AppLanguage.BENGALI -> "দয়া করে আপনার সম্পূর্ণ নাম লিখুন"
                     AppLanguage.HINDI -> "कृपया अपना पूरा नाम दर्ज करें"
-                    else -> "দয়া করে আপনার সম্পূর্ণ নাম লিখুন"
+                    else -> "Please enter your full name"
                 })
                 return@launch
             }
             if (trimmedPhone.length < 8) {
                 onError(when (lang) {
-                    AppLanguage.ENGLISH -> "Please enter a valid phone number"
+                    AppLanguage.BENGALI -> "দয়া করে সঠিক মোবাইল নম্বর লিখুন"
                     AppLanguage.HINDI -> "कृपया मान्य फोन नंबर दर्ज करें"
-                    else -> "দয়া করে সঠিক মোবাইল নম্বর লিখুন"
+                    else -> "Please enter a valid phone number"
                 })
                 return@launch
             }
             if (trimmedPass.length < 3) {
                 onError(when (lang) {
-                    AppLanguage.ENGLISH -> "Password must be at least 3 characters"
+                    AppLanguage.BENGALI -> "পাসওয়ার্ড অন্তত ৩ অক্ষরের হতে হবে"
                     AppLanguage.HINDI -> "पासवर्ड कम से कम 3 अक्षरों का होना चाहिए"
-                    else -> "পাসওয়ার্ড অন্তত ৩ অক্ষরের হতে হবে"
+                    else -> "Password must be at least 3 characters"
                 })
                 return@launch
             }
@@ -207,16 +207,16 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                     _currentUser.value = updatedUser
                     _activePanel.value = "CUSTOMER"
                     _userFeedbackMessage.value = when (lang) {
-                        AppLanguage.ENGLISH -> "Welcome, ${updatedUser.name}! Continue pre-order."
+                        AppLanguage.BENGALI -> "স্বাগতম, ${updatedUser.name}! প্রি-অর্ডার চালিয়ে যান।"
                         AppLanguage.HINDI -> "स्वागत है, ${updatedUser.name}! प्री-ऑर्डर जारी रखें।"
-                        else -> "স্বাগতম, ${updatedUser.name}! প্রি-অর্ডার চালিয়ে যান।"
+                        else -> "Welcome, ${updatedUser.name}! Continue pre-order."
                     }
                     onSuccess()
                 } else {
                     onError(when (lang) {
-                        AppLanguage.ENGLISH -> "Incorrect password! Please try again."
+                        AppLanguage.BENGALI -> "ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।"
                         AppLanguage.HINDI -> "गलत पासवर्ड! कृपया पुनः प्रयास करें।"
-                        else -> "ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।"
+                        else -> "Incorrect password! Please try again."
                     })
                 }
             } else {
@@ -231,9 +231,9 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                 _currentUser.value = created
                 _activePanel.value = "CUSTOMER"
                 _userFeedbackMessage.value = when (lang) {
-                    AppLanguage.ENGLISH -> "Registration successful! Welcome, ${created.name}!"
+                    AppLanguage.BENGALI -> "রেজিস্ট্রেশন সফল! স্বাগতম, ${created.name}!"
                     AppLanguage.HINDI -> "पंजीकरण सफल! स्वागत है, ${created.name}!"
-                    else -> "রেজিস্ট্রেশন সফল! স্বাগতম, ${created.name}!"
+                    else -> "Registration successful! Welcome, ${created.name}!"
                 }
                 onSuccess()
             }
@@ -252,6 +252,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
             val trimmedPhone = phone.trim()
             val trimmedPass = pass.trim()
             val trimmedName = name.trim()
+            val lang = _currentLanguage.value
 
             val user = repository.getUserByPhone(trimmedPhone)
             if (user != null) {
@@ -267,13 +268,20 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                     _activePanel.value = updatedUser.role
                     onSuccess()
                 } else {
-                    onError("ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।")
+                    onError(when (lang) {
+                        AppLanguage.BENGALI -> "ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।"
+                        AppLanguage.HINDI -> "गलत पासवर्ड! कृपया सही पासवर्ड दर्ज करें।"
+                        else -> "Incorrect password! Please enter the correct password."
+                    })
                 }
             } else {
                 // Auto create account for customer ease
-                val displayName = if (trimmedName.isNotBlank()) trimmedName
-                else if (expectedRole == "BARBER") "সেলুন মাস্টার ($trimmedPhone)"
-                else "কাস্টমার ($trimmedPhone)"
+                val defaultRoleName = when (lang) {
+                    AppLanguage.BENGALI -> if (expectedRole == "BARBER") "সেলুন মাস্টার ($trimmedPhone)" else "কাস্টমার ($trimmedPhone)"
+                    AppLanguage.HINDI -> if (expectedRole == "BARBER") "सैलून मास्टर ($trimmedPhone)" else "ग्राहक ($trimmedPhone)"
+                    else -> if (expectedRole == "BARBER") "Salon Master ($trimmedPhone)" else "Customer ($trimmedPhone)"
+                }
+                val displayName = if (trimmedName.isNotBlank()) trimmedName else defaultRoleName
 
                 val newUser = UserEntity(
                     phone = trimmedPhone,
@@ -299,6 +307,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         viewModelScope.launch {
             val trimmedPhone = phone.trim()
+            val lang = _currentLanguage.value
             val user = repository.getUserByPhone(trimmedPhone)
             if (user != null) {
                 val updatedUser = if (name.isNotBlank() && user.name != name.trim()) {
@@ -314,15 +323,29 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 onSuccess()
             } else {
-                val displayName = if (name.isNotBlank()) name.trim()
-                else if (expectedRole == "BARBER") "সেলুন ওনার ($trimmedPhone)"
-                else if (expectedRole == "MASTER") "অ্যাপ ক্রিয়েটর ($trimmedPhone)"
-                else "কাস্টমার ($trimmedPhone)"
+                val defaultRoleName = when (lang) {
+                    AppLanguage.BENGALI -> when (expectedRole) {
+                        "BARBER" -> "সেলুন ওনার ($trimmedPhone)"
+                        "MASTER" -> "অ্যাপ ক্রিয়েটর ($trimmedPhone)"
+                        else -> "কাস্টমার ($trimmedPhone)"
+                    }
+                    AppLanguage.HINDI -> when (expectedRole) {
+                        "BARBER" -> "सैलून ओनर ($trimmedPhone)"
+                        "MASTER" -> "ऐप निर्माता ($trimmedPhone)"
+                        else -> "ग्राहक ($trimmedPhone)"
+                    }
+                    else -> when (expectedRole) {
+                        "BARBER" -> "Salon Owner ($trimmedPhone)"
+                        "MASTER" -> "App Creator ($trimmedPhone)"
+                        else -> "Customer ($trimmedPhone)"
+                    }
+                }
+                val displayName = if (name.isNotBlank()) name.trim() else defaultRoleName
 
                 val newUser = UserEntity(
                     phone = trimmedPhone,
                     name = displayName,
-                    password = "firebase_otp_verified",
+                    password = "otp_verified",
                     role = expectedRole
                 )
                 repository.registerUser(newUser)
@@ -342,7 +365,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             when (role) {
                 "BARBER" -> {
-                    val user = repository.getUserByPhone("01700000000")
+                    val user = repository.getUserByPhone("9876543210") ?: repository.getUserByPhone("01700000000")
                     if (user != null) {
                         _currentUser.value = user
                         _activePanel.value = "BARBER"
@@ -351,7 +374,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
                 "CUSTOMER" -> {
-                    val user = repository.getUserByPhone("01800000000")
+                    val user = repository.getUserByPhone("9800000000") ?: repository.getUserByPhone("01800000000")
                     if (user != null) {
                         _currentUser.value = user
                         _activePanel.value = "CUSTOMER"
@@ -360,7 +383,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 "MASTER" -> {
                     val masterUser = UserEntity(
-                        phone = "01999999999",
+                        phone = "9899999999",
                         name = "App Creator (Master Admin)",
                         password = "admin",
                         role = "MASTER"
@@ -556,7 +579,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
 
             if (validIds.contains(cleanId) && validPasses.contains(cleanPass)) {
                 val masterUser = UserEntity(
-                    phone = "01999999999",
+                    phone = "9899999999",
                     name = "App Creator & Master Admin",
                     password = cleanPass,
                     role = "MASTER"
@@ -671,36 +694,36 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
         val lang = _currentLanguage.value
         if (user == null) {
             onError(when (lang) {
-                AppLanguage.ENGLISH -> "Please sign in with your phone number first."
+                AppLanguage.BENGALI -> "দয়া করে আগে মোবাইল নম্বর দিয়ে লগইন করুন।"
                 AppLanguage.HINDI -> "कृपया पहले फोन नंबर से लॉगिन करें।"
-                else -> "দয়া করে আগে মোবাইল নম্বর দিয়ে লগইন করুন।"
+                else -> "Please sign in with your phone number first."
             })
             return
         }
         val selected = _selectedServices.value
         if (selected.isEmpty()) {
             onError(when (lang) {
-                AppLanguage.ENGLISH -> "Please select at least one grooming service."
+                AppLanguage.BENGALI -> "দয়া করে অন্তত একটি সেবা নির্বাচন করুন।"
                 AppLanguage.HINDI -> "कृपया कम से कम एक सेवा चुनें।"
-                else -> "দয়া করে অন্তত একটি সেবা নির্বাচন করুন।"
+                else -> "Please select at least one grooming service."
             })
             return
         }
         val slot = _selectedSlot.value
         if (slot.isEmpty()) {
             onError(when (lang) {
-                AppLanguage.ENGLISH -> "Please select an available time slot."
+                AppLanguage.BENGALI -> "দয়া করে ফাঁকা টাইম স্লট সিলেক্ট করুন।"
                 AppLanguage.HINDI -> "कृपया एक उपलब्ध समय स्लॉट चुनें।"
-                else -> "দয়া করে ফাঁকা টাইম স্লট সিলেক্ট করুন।"
+                else -> "Please select an available time slot."
             })
             return
         }
 
         if (isSlotBooked(_selectedDate.value, slot)) {
             onError(when (lang) {
-                AppLanguage.ENGLISH -> "Sorry, this time slot has just been booked. Please select another slot."
+                AppLanguage.BENGALI -> "দুঃখিত, এই টাইম স্লটটি ইতিমধ্যে বুক হয়ে গেছে। অন্য সময় বেছে নিন।"
                 AppLanguage.HINDI -> "क्षमा करें, यह स्लॉट अभी बुक हो गया है। कृपया दूसरा स्लॉट चुनें।"
-                else -> "দুঃখিত, এই টাইম স্লটটি ইতিমধ্যে বুক হয়ে গেছে। অন্য সময় বেছে নিন।"
+                else -> "Sorry, this time slot has just been booked. Please select another slot."
             })
             return
         }
@@ -708,9 +731,9 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
         val (total, advance, remaining) = calculateBookingSummary()
         val serviceNames = selected.joinToString(", ") { svc ->
             when (lang) {
-                AppLanguage.ENGLISH -> svc.nameEn
+                AppLanguage.BENGALI -> svc.nameBn
                 AppLanguage.HINDI -> svc.nameHi
-                else -> svc.nameBn
+                else -> svc.nameEn
             }
         }
         val txnId = "UPI" + UUID.randomUUID().toString().take(8).uppercase()
@@ -734,9 +757,9 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
             val bookingId = repository.createBooking(newBooking)
             clearSelectedServices()
             _userFeedbackMessage.value = when (lang) {
-                AppLanguage.ENGLISH -> "Booking confirmed! 55% Advance (₹$advance) received via UPI."
+                AppLanguage.BENGALI -> "বুকিং নিশ্চিত হয়েছে! ৫৫% অগ্রিম (₹$advance) UPI দ্বারা গৃহীত হয়েছে।"
                 AppLanguage.HINDI -> "बुकिंग की पुष्टि हुई! ₹$advance अग्रिम UPI द्वारा प्राप्त हुआ।"
-                else -> "বুকিং নিশ্চিত হয়েছে! ৫৫% অগ্রিম (₹$advance) UPI দ্বারা গৃহীত হয়েছে।"
+                else -> "Booking confirmed! 55% Advance (₹$advance) received via UPI."
             }
             // Auto-sync booking to Supabase in background
             launch {

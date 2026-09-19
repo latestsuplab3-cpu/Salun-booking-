@@ -355,9 +355,9 @@ object StringRes {
         AppLanguage.HINDI to "अपना नाम दर्ज करें"
     )
     val phonePlaceholder = mapOf(
-        AppLanguage.BENGALI to "মোবাইল নম্বর (যেমন: 017XXXXXXXX)",
-        AppLanguage.ENGLISH to "Mobile number (e.g. 017XXXXXXXX)",
-        AppLanguage.HINDI to "मोबाइल नंबर दर्ज करें"
+        AppLanguage.BENGALI to "মোবাইল নম্বর (যেমন: 9876543210)",
+        AppLanguage.ENGLISH to "Mobile number (e.g. 9876543210)",
+        AppLanguage.HINDI to "मोबाइल नंबर (उदा: 9876543210)"
     )
     val passwordPlaceholder = mapOf(
         AppLanguage.BENGALI to "পাসওয়ার্ড লিখুন",
@@ -753,8 +753,8 @@ object StringRes {
         AppLanguage.HINDI to "क्रेडेंशियल सत्यापित हो रहे हैं..."
     )
     val ownerPhonePlaceholder = mapOf(
-        AppLanguage.BENGALI to "যেমন: 01700000000",
-        AppLanguage.ENGLISH to "e.g. 01700000000 / 9876543210",
+        AppLanguage.BENGALI to "যেমন: 9876543210",
+        AppLanguage.ENGLISH to "e.g. 9876543210",
         AppLanguage.HINDI to "जैसे: 9876543210"
     )
     val salonIdHelperText = mapOf(

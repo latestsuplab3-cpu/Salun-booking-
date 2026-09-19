@@ -591,9 +591,11 @@ fun PreOrderSheet(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = if (language == AppLanguage.ENGLISH) "Instant direct UPI advance payment of ₹$advance"
-                                else if (language == AppLanguage.HINDI) "₹$advance का तत्काल सीधा UPI अग्रिम भुगतान"
-                                else "তাৎক্ষণিক সরাসরি UPI অগ্রিম পেমেন্ট ₹$advance",
+                                text = when (language) {
+                                    AppLanguage.BENGALI -> "তাৎক্ষণিক সরাসরি UPI অগ্রিম পেমেন্ট ₹$advance"
+                                    AppLanguage.HINDI -> "₹$advance का तत्काल सीधा UPI अग्रिम भुगतान"
+                                    else -> "Instant direct UPI advance payment of ₹$advance"
+                                },
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                                 color = TextSecondary
                             )
@@ -657,9 +659,11 @@ fun PreOrderSheet(
                         text = if (selectedSlot.isEmpty()) {
                             StringRes.selectSlotFirst.tr(language)
                         } else {
-                            if (language == AppLanguage.ENGLISH) "Pay ₹$advance Advance & Book Slot"
-                            else if (language == AppLanguage.HINDI) "₹$advance अग्रिम भुगतान कर स्लॉट बुक करें"
-                            else "₹$advance অগ্রিম পে করে স্লট বুক করুন"
+                            when (language) {
+                                AppLanguage.BENGALI -> "₹$advance অগ্রিম পে করে স্লট বুক করুন"
+                                AppLanguage.HINDI -> "₹$advance अग्रिम भुगतान कर स्लॉट बुक करें"
+                                else -> "Pay ₹$advance Advance & Book Slot"
+                            }
                         },
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,

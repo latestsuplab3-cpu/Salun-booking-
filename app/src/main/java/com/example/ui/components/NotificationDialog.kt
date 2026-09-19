@@ -99,7 +99,11 @@ fun NotificationDialog(
                     ) {
                         TextButton(onClick = onMarkAllAsRead) {
                             Text(
-                                text = "সবগুলো পড়া হয়েছে ✓",
+                                text = when (language) {
+                                    AppLanguage.BENGALI -> "সবগুলো পড়া হয়েছে ✓"
+                                    AppLanguage.HINDI -> "सभी पढ़े गए चिन्हित करें ✓"
+                                    else -> "Mark all as read ✓"
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = AmberPrimary
                             )

@@ -19,9 +19,9 @@ object FirebaseAuthManager {
         val cleaned = input.trim().replace(" ", "").replace("-", "")
         return when {
             cleaned.startsWith("+") -> cleaned
-            cleaned.length == 10 -> "+91$cleaned" // India default
-            cleaned.startsWith("01") && cleaned.length == 11 -> "+88$cleaned" // Bangladesh default
-            else -> "+$cleaned"
+            cleaned.startsWith("0") -> "+91" + cleaned.removePrefix("0")
+            cleaned.length == 10 -> "+91$cleaned" // India default (10 digits)
+            else -> "+91$cleaned"
         }
     }
 
@@ -40,12 +40,19 @@ object FirebaseAuthManager {
             }
 
             override fun onVerificationFailed(e: FirebaseException) {
-                val message = when (e) {
-                    is FirebaseAuthInvalidCredentialsException -> "ভুল ফোন নম্বর ফরম্যাট! (Invalid phone number format)"
-                    is FirebaseTooManyRequestsException -> "অনেক বেশি অনুরোধ করা হয়েছে। কিছুক্ষণ পর চেষ্টা করুন।"
-                    else -> e.localizedMessage ?: "OTP পাঠানোর সময় ত্রুটি হয়েছে।"
+                val rawMsg = e.localizedMessage ?: ""
+                val errorCode = when {
+                    rawMsg.contains("17006", ignoreCase = true) || rawMsg.contains("blocked", ignoreCase = true) || rawMsg.contains("SMS unable to be sent until this region enabled", ignoreCase = true) ->
+                        "ERROR_SMS_REGION_17006"
+                    rawMsg.contains("INVALID_CERT_HASH", ignoreCase = true) || rawMsg.contains("certificate hash", ignoreCase = true) || rawMsg.contains("siteKey", ignoreCase = true) ->
+                        "ERROR_INVALID_CERT_HASH"
+                    e is FirebaseAuthInvalidCredentialsException -> 
+                        "ERROR_INVALID_CREDENTIALS"
+                    e is FirebaseTooManyRequestsException -> 
+                        "ERROR_TOO_MANY_REQUESTS"
+                    else -> rawMsg.ifBlank { "ERROR_UNKNOWN" }
                 }
-                onError(message)
+                onError(errorCode)
             }
 
             override fun onCodeSent(
@@ -79,7 +86,7 @@ object FirebaseAuthManager {
             override fun onVerificationCompleted(credential: PhoneAuthCredential) {}
 
             override fun onVerificationFailed(e: FirebaseException) {
-                onError(e.localizedMessage ?: "OTP পুনরায় পাঠানোর সময় সমস্যা হয়েছে।")
+                onError(e.localizedMessage ?: "ERROR_RESEND_FAILED")
             }
 
             override fun onCodeSent(
@@ -116,14 +123,14 @@ object FirebaseAuthManager {
                     } else {
                         val ex = task.exception
                         val msg = when (ex) {
-                            is FirebaseAuthInvalidCredentialsException -> "ভুল ওটিপি কোড! অনুগ্রহ করে সঠিক কোড দিন।"
-                            else -> ex?.localizedMessage ?: "OTP যাচাইকরণ ব্যর্থ হয়েছে।"
+                            is FirebaseAuthInvalidCredentialsException -> "ERROR_INVALID_OTP"
+                            else -> ex?.localizedMessage ?: "ERROR_VERIFY_FAILED"
                         }
                         onError(msg)
                     }
                 }
         } catch (e: Exception) {
-            onError(e.localizedMessage ?: "OTP যাচাই করতে সমস্যা হয়েছে।")
+            onError(e.localizedMessage ?: "ERROR_VERIFY_FAILED")
         }
     }
 }

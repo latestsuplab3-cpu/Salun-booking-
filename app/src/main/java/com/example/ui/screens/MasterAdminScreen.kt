@@ -349,7 +349,7 @@ fun MasterAdminScreen(
                                     value = phoneInput,
                                     onValueChange = { phoneInput = it },
                                     label = { Text("Owner Phone *") },
-                                    placeholder = { Text("017XXXXXXXX") },
+                                    placeholder = { Text("9876543210") },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                                     singleLine = true,
                                     modifier = Modifier

@@ -48,6 +48,7 @@ fun BarberScreen(
     val reviews by viewModel.reviews.collectAsState()
     val currentSalonLicense by viewModel.currentSalonLicense.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
+    val isSyncingSupabase by viewModel.isSyncingSupabase.collectAsState()
     val todayDate = viewModel.todayDateString
 
     // Gate Salon Owner Dashboard behind the Salon Owner Login Screen
@@ -165,6 +166,30 @@ fun BarberScreen(
                             tint = Color(0xFF3ECF8E),
                             modifier = Modifier.size(20.dp)
                         )
+                    }
+
+                    // Supabase Cloud Sync Quick Button
+                    IconButton(
+                        onClick = { viewModel.syncNowToSupabase() },
+                        enabled = !isSyncingSupabase,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .testTag("btn_barber_supabase_sync")
+                    ) {
+                        if (isSyncingSupabase) {
+                            CircularProgressIndicator(
+                                color = Color(0xFF3ECF8E),
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.CloudSync,
+                                contentDescription = "Sync with Supabase Cloud",
+                                tint = Color(0xFF3ECF8E),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
 
                     // Small Profile Icon in top right corner of banner

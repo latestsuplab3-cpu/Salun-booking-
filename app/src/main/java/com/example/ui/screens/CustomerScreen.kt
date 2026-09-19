@@ -48,6 +48,7 @@ fun CustomerScreen(
     val allBookings by viewModel.allBookings.collectAsState()
     val reviews by viewModel.reviews.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
+    val isSyncingSupabase by viewModel.isSyncingSupabase.collectAsState()
     val selectedServices by viewModel.selectedServices.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val selectedSlot by viewModel.selectedSlot.collectAsState()
@@ -218,6 +219,8 @@ fun CustomerScreen(
                     bookings = customerBookings,
                     currentUser = currentUser,
                     language = language,
+                    isSyncing = isSyncingSupabase,
+                    onSyncSupabase = { viewModel.syncNowToSupabase() },
                     onRequireLogin = { showPreOrderLoginSheet = true },
                     onReviewClick = { booking -> reviewBookingTarget = booking }
                 )
@@ -568,6 +571,8 @@ fun CustomerBookingsContent(
     bookings: List<BookingEntity>,
     currentUser: UserEntity?,
     language: AppLanguage,
+    isSyncing: Boolean = false,
+    onSyncSupabase: () -> Unit = {},
     onRequireLogin: () -> Unit,
     onReviewClick: (BookingEntity) -> Unit
 ) {
@@ -642,6 +647,27 @@ fun CustomerBookingsContent(
                     style = MaterialTheme.typography.bodyLarge,
                     color = TextSecondary
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onSyncSupabase,
+                    enabled = !isSyncing,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, AccentGreen)
+                ) {
+                    if (isSyncing) {
+                        CircularProgressIndicator(
+                            color = AccentGreen,
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Cloud Syncing...", fontSize = 12.sp, color = AccentGreen)
+                    } else {
+                        Icon(Icons.Default.CloudSync, contentDescription = null, tint = AccentGreen, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Supabase Cloud Sync", fontSize = 12.sp, color = AccentGreen, fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
         }
     } else {
@@ -650,6 +676,40 @@ fun CustomerBookingsContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Your Appointment History",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    OutlinedButton(
+                        onClick = onSyncSupabase,
+                        enabled = !isSyncing,
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        border = BorderStroke(1.dp, AccentGreen.copy(alpha = 0.5f))
+                    ) {
+                        if (isSyncing) {
+                            CircularProgressIndicator(
+                                color = AccentGreen,
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Syncing...", fontSize = 11.sp, color = AccentGreen)
+                        } else {
+                            Icon(Icons.Default.CloudSync, contentDescription = null, tint = AccentGreen, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Supabase Sync", fontSize = 11.sp, color = AccentGreen, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+            }
             items(bookings) { booking ->
                 BookingCard(
                     booking = booking,
