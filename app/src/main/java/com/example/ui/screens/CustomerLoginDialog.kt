@@ -64,28 +64,18 @@ fun CustomerLoginDialog(
     val scrollState = rememberScrollState()
 
     fun performSubmit() {
-        errorMessage = null
-        val cleanPhone = phoneInput.trim()
+        val digits = phoneInput.filter { it.isDigit() }.take(10)
+        val cleanPhone = "+91$digits"
         val cleanPass = passwordInput.trim()
         val cleanName = nameInput.trim()
 
-        if (cleanPhone.isBlank()) {
-            errorMessage = "Please enter your mobile phone number."
-            return
-        }
-        if (cleanPass.isBlank()) {
-            errorMessage = "Please enter your password."
-            return
-        }
-        if (isNewAccountMode && cleanName.isBlank()) {
-            errorMessage = "Please enter your full name."
+        if (digits.length != 10 || cleanPass.isBlank()) {
             return
         }
 
         isLoading = true
-        onLoginSubmit(cleanName, cleanPhone, cleanPass) { err ->
+        onLoginSubmit(cleanName, cleanPhone, cleanPass) { _ ->
             isLoading = false
-            errorMessage = err
         }
     }
 
@@ -338,11 +328,13 @@ fun CustomerLoginDialog(
                     OutlinedTextField(
                         value = phoneInput,
                         onValueChange = {
-                            phoneInput = it
-                            errorMessage = null
+                            phoneInput = it.filter { char -> char.isDigit() }.take(10)
                         },
                         label = { Text(StringRes.phoneNumber.tr(language)) },
-                        placeholder = { Text(StringRes.phonePlaceholder.tr(language)) },
+                        placeholder = { Text("98765 43210") },
+                        prefix = {
+                            Text("🇮🇳 +91 ", fontWeight = FontWeight.Bold, color = AmberPrimary)
+                        },
                         leadingIcon = {
                             Icon(Icons.Default.Phone, contentDescription = null, tint = AmberPrimary)
                         },
@@ -355,7 +347,7 @@ fun CustomerLoginDialog(
                         },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Phone,
+                            keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Next
                         ),
                         keyboardActions = KeyboardActions(
@@ -374,7 +366,6 @@ fun CustomerLoginDialog(
                         value = passwordInput,
                         onValueChange = {
                             passwordInput = it
-                            errorMessage = null
                         },
                         label = { Text(StringRes.password.tr(language)) },
                         placeholder = { Text(StringRes.passwordPlaceholder.tr(language)) },
@@ -407,26 +398,6 @@ fun CustomerLoginDialog(
                             .testTag("input_customer_password"),
                         shape = RoundedCornerShape(12.dp)
                     )
-
-                    // Error Message
-                    errorMessage?.let { err ->
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Surface(
-                            color = AccentRed.copy(alpha = 0.15f),
-                            border = BorderStroke(1.dp, AccentRed.copy(alpha = 0.4f)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.fillMaxWidth().testTag("banner_customer_login_error")
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = AccentRed, modifier = Modifier.size(18.dp))
-                                Text(err, style = MaterialTheme.typography.bodySmall, color = AccentRed)
-                            }
-                        }
-                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -500,64 +471,6 @@ fun CustomerLoginDialog(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp
                             )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 1-Tap Customer Demo Logins
-                    Card(
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = StringRes.quickDemoCustomersLabel.tr(language),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = TextSecondary
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedButton(
-                                    onClick = {
-                                        phoneInput = "+91 98765 43210"
-                                        passwordInput = "123456"
-                                        nameInput = "Rahul Sharma"
-                                        isNewAccountMode = false
-                                        errorMessage = null
-                                    },
-                                    shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .testTag("btn_quick_demo_rahul")
-                                ) {
-                                    Text("👤 Rahul (9876543210)", fontSize = 11.sp, maxLines = 1)
-                                }
-
-                                OutlinedButton(
-                                    onClick = {
-                                        phoneInput = "+91 91234 56789"
-                                        passwordInput = "123456"
-                                        nameInput = "Priya Das"
-                                        isNewAccountMode = false
-                                        errorMessage = null
-                                    },
-                                    shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .testTag("btn_quick_demo_priya")
-                                ) {
-                                    Text("👤 Priya (9123456789)", fontSize = 11.sp, maxLines = 1)
-                                }
-                            }
                         }
                     }
 

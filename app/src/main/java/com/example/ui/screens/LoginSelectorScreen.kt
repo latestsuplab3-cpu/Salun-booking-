@@ -790,74 +790,15 @@ fun CustomerLoginForm(
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-            // Quick Demo Auto-Fill
-            OutlinedButton(
-                onClick = onQuickFillDemo,
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, AmberPrimary.copy(alpha = 0.5f)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(38.dp)
-                    .testTag("btn_customer_quick_demo_fill")
-            ) {
-                Icon(Icons.Default.FlashOn, contentDescription = null, tint = AmberPrimary, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "${StringRes.quickDemoFill.tr(language)} (01800000000 / 123)",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = AmberPrimary
-                )
-            }
-
-            // Error banner
-            if (errorMessage != null) {
-                Surface(
-                    color = AccentRed.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, AccentRed.copy(alpha = 0.35f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = AccentRed, modifier = Modifier.size(18.dp))
-                        Text(
-                            text = errorMessage,
-                            color = AccentRed,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
-
-            // Name Field (only if new customer)
-            if (isNewAccount) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = onNameChange,
-                    label = { Text(StringRes.customerName.tr(language)) },
-                    placeholder = { Text("e.g. Shakib Ahmed") },
-                    leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null, tint = AmberPrimary) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("input_customer_name")
-                )
-            }
-
             // Phone Field
             OutlinedTextField(
                 value = phone,
-                onValueChange = onPhoneChange,
+                onValueChange = { onPhoneChange(it.filter { c -> c.isDigit() }.take(10)) },
                 label = { Text(StringRes.phoneNumber.tr(language)) },
-                placeholder = { Text("018XXXXXXXX or 9876543210") },
+                placeholder = { Text("98765 43210") },
+                prefix = {
+                    Text("🇮🇳 +91 ", fontWeight = FontWeight.Bold, color = AmberPrimary)
+                },
                 leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = AmberPrimary) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
@@ -1055,50 +996,6 @@ fun SalonOwnerLoginForm(
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-            // Quick Demo Auto-Fill
-            OutlinedButton(
-                onClick = onQuickFillDemo,
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, AccentBronze.copy(alpha = 0.5f)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(38.dp)
-                    .testTag("btn_owner_quick_demo_fill")
-            ) {
-                Icon(Icons.Default.FlashOn, contentDescription = null, tint = AccentBronze, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "${StringRes.quickDemoFill.tr(language)} (SALON-101 / 01700000000 / 123)",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = AccentBronze
-                )
-            }
-
-            // Error banner
-            if (errorMessage != null) {
-                Surface(
-                    color = AccentRed.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, AccentRed.copy(alpha = 0.35f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = AccentRed, modifier = Modifier.size(18.dp))
-                        Text(
-                            text = errorMessage,
-                            color = AccentRed,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
-
             // Salon ID Field
             OutlinedTextField(
                 value = salonId,
@@ -1118,9 +1015,12 @@ fun SalonOwnerLoginForm(
             // Phone Field
             OutlinedTextField(
                 value = phone,
-                onValueChange = onPhoneChange,
+                onValueChange = { onPhoneChange(it.filter { c -> c.isDigit() }.take(10)) },
                 label = { Text(StringRes.phoneNumber.tr(language)) },
-                placeholder = { Text("017XXXXXXXX") },
+                placeholder = { Text("98765 43210") },
+                prefix = {
+                    Text("🇮🇳 +91 ", fontWeight = FontWeight.Bold, color = AccentBronze)
+                },
                 leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = AccentBronze) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
@@ -1299,50 +1199,6 @@ fun MasterLoginForm(
                         color = masterPurple,
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                     )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-            // Quick Demo Auto-Fill
-            OutlinedButton(
-                onClick = onQuickFillDemo,
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, masterPurple.copy(alpha = 0.5f)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(38.dp)
-                    .testTag("btn_master_quick_demo_fill")
-            ) {
-                Icon(Icons.Default.FlashOn, contentDescription = null, tint = masterPurple, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "${StringRes.quickDemoFill.tr(language)} (MASTER-ADMIN / admin123)",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = masterPurple
-                )
-            }
-
-            // Error banner
-            if (errorMessage != null) {
-                Surface(
-                    color = AccentRed.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, AccentRed.copy(alpha = 0.35f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = AccentRed, modifier = Modifier.size(18.dp))
-                        Text(
-                            text = errorMessage,
-                            color = AccentRed,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
                 }
             }
 

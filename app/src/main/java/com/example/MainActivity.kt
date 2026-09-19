@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.data.auth.FirebaseAuthManager
 import com.example.ui.components.AppCreatorPanelSheet
 import com.example.ui.components.CustomerProfileSheet
 import com.example.ui.components.FirebaseOtpDialog
@@ -29,6 +30,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        try {
+            FirebaseAuthManager.getOrInitAuth(this)
+        } catch (e: Throwable) {
+            android.util.Log.w("MainActivity", "Firebase init: ${e.message}")
+        }
         setContent {
             SalonAppTheme {
                 val viewModel: SalonViewModel = viewModel()
@@ -264,6 +270,7 @@ fun SalonAppMain(viewModel: SalonViewModel) {
     if (showCustomerProfileSheet) {
         val allBookings by viewModel.allBookings.collectAsState()
         val services by viewModel.services.collectAsState()
+        val customerLocation by viewModel.customerLocation.collectAsState()
 
         CustomerProfileSheet(
             currentUser = currentUser,
@@ -271,6 +278,10 @@ fun SalonAppMain(viewModel: SalonViewModel) {
             allBookings = allBookings,
             services = services,
             unreadNotifications = unreadCount,
+            customerLocation = customerLocation,
+            onUpdateLocation = { addr, loc, city, st, pin ->
+                viewModel.updateCustomerLocation(addr, loc, city, st, pin)
+            },
             onDismiss = { showCustomerProfileSheet = false },
             onUpdateName = { newName ->
                 viewModel.updateCustomerProfile(newName) { }

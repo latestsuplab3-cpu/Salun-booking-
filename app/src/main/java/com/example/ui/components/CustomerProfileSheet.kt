@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
 import com.example.data.model.BookingEntity
 import com.example.data.model.ServiceItemEntity
@@ -30,6 +32,7 @@ import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.StringRes
 import com.example.ui.localization.tr
 import com.example.ui.theme.*
+import com.example.ui.viewmodel.CustomerLocation
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -50,12 +53,21 @@ fun CustomerProfileSheet(
     onOpenNotifications: () -> Unit,
     onLanguageChange: (AppLanguage) -> Unit,
     onSwitchToBarberPanel: () -> Unit,
-    onOpenCreatorHub: () -> Unit
+    onOpenCreatorHub: () -> Unit,
+    customerLocation: CustomerLocation = CustomerLocation(),
+    onUpdateLocation: (address: String, locality: String, city: String, state: String, pincode: String) -> Unit = { _, _, _, _, _ -> }
 ) {
     val scrollState = rememberScrollState()
     var isEditingName by remember { mutableStateOf(false) }
     var editedName by remember(currentUser?.name) { mutableStateOf(currentUser?.name ?: "") }
     var showLogoutConfirm by remember { mutableStateOf(false) }
+
+    var isEditingLocation by remember { mutableStateOf(false) }
+    var inputAddress by remember(customerLocation.address) { mutableStateOf(customerLocation.address) }
+    var inputLocality by remember(customerLocation.locality) { mutableStateOf(customerLocation.locality) }
+    var inputCity by remember(customerLocation.city) { mutableStateOf(customerLocation.city) }
+    var inputState by remember(customerLocation.state) { mutableStateOf(customerLocation.state) }
+    var inputPincode by remember(customerLocation.pincode) { mutableStateOf(customerLocation.pincode) }
 
     val customerPhone = currentUser?.phone ?: ""
     val customerBookings = remember(allBookings, customerPhone) {
@@ -396,25 +408,6 @@ fun CustomerProfileSheet(
                                 fontWeight = FontWeight.Bold
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Quick demo shortcut
-                        OutlinedButton(
-                            onClick = {
-                                onQuickLogin("+91 98765 43210", "Rahul Sharma")
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("btn_profile_quick_demo")
-                        ) {
-                            Text(
-                                text = "⚡ Quick Demo: Rahul Sharma (+91 98765 43210)",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
                     }
                 }
             }
@@ -551,6 +544,222 @@ fun CustomerProfileSheet(
 
             Spacer(modifier = Modifier.height(18.dp))
 
+            // Customer Location Details Section
+            Text(
+                text = "Customer Location & Address",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                border = BorderStroke(1.dp, AmberPrimary.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("card_customer_location")
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(AmberPrimary.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = AmberPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = "Delivery & Service Location",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "India • Active Service Address",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = {
+                                if (isEditingLocation) {
+                                    onUpdateLocation(inputAddress, inputLocality, inputCity, inputState, inputPincode)
+                                    isEditingLocation = false
+                                } else {
+                                    inputAddress = customerLocation.address
+                                    inputLocality = customerLocation.locality
+                                    inputCity = customerLocation.city
+                                    inputState = customerLocation.state
+                                    inputPincode = customerLocation.pincode
+                                    isEditingLocation = true
+                                }
+                            },
+                            modifier = Modifier.testTag("btn_edit_location")
+                        ) {
+                            Icon(
+                                imageVector = if (isEditingLocation) Icons.Default.Check else Icons.Default.Edit,
+                                contentDescription = if (isEditingLocation) "Save Location" else "Edit Location",
+                                tint = AmberPrimary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (isEditingLocation) {
+                        OutlinedTextField(
+                            value = inputAddress,
+                            onValueChange = { inputAddress = it },
+                            label = { Text("Address / Flat / Road") },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("input_customer_address")
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = inputLocality,
+                                onValueChange = { inputLocality = it },
+                                label = { Text("Locality / Landmark") },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("input_customer_locality")
+                            )
+                            OutlinedTextField(
+                                value = inputCity,
+                                onValueChange = { inputCity = it },
+                                label = { Text("City") },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("input_customer_city")
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = inputState,
+                                onValueChange = { inputState = it },
+                                label = { Text("State") },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("input_customer_state")
+                            )
+                            OutlinedTextField(
+                                value = inputPincode,
+                                onValueChange = { inputPincode = it.filter { c -> c.isDigit() }.take(6) },
+                                label = { Text("PIN Code (6 digits)") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("input_customer_pincode")
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    inputAddress = customerLocation.address
+                                    inputLocality = customerLocation.locality
+                                    inputCity = customerLocation.city
+                                    inputState = customerLocation.state
+                                    inputPincode = customerLocation.pincode
+                                    isEditingLocation = false
+                                }
+                            ) {
+                                Text("Cancel")
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = {
+                                    onUpdateLocation(inputAddress, inputLocality, inputCity, inputState, inputPincode)
+                                    isEditingLocation = false
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary),
+                                modifier = Modifier.testTag("btn_save_customer_location")
+                            ) {
+                                Text("Save Location", color = Color(0xFF0F172A), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Home,
+                                        contentDescription = null,
+                                        tint = AmberPrimary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = customerLocation.address,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.NearMe,
+                                        contentDescription = null,
+                                        tint = TextSecondary,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "${customerLocation.locality}, ${customerLocation.city}, ${customerLocation.state} - ${customerLocation.pincode}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextSecondary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
             // Language & Notifications Quick Controls
             Text(
                 text = "Language & Notification Settings",
@@ -665,47 +874,23 @@ fun CustomerProfileSheet(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    OutlinedButton(
+                        onClick = { /* Helpdesk call intent/action */ },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        OutlinedButton(
-                            onClick = { /* Helpdesk call intent/action */ },
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Phone,
-                                contentDescription = null,
-                                tint = AmberPrimary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = StringRes.callSalon.tr(language),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        OutlinedButton(
-                            onClick = { /* WhatsApp support intent/action */ },
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Chat,
-                                contentDescription = null,
-                                tint = AccentGreen,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "WhatsApp",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = null,
+                            tint = AmberPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = StringRes.callSalon.tr(language),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             }

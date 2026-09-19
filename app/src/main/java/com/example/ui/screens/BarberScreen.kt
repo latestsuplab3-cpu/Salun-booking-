@@ -65,6 +65,7 @@ fun BarberScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedFilter by remember { mutableStateOf("ALL") }
     var editingService by remember { mutableStateOf<ServiceItemEntity?>(null) }
+    var showLogoutConfirmDialog by remember { mutableStateOf(false) }
 
     // Analytics calculations
     val totalAdvanceCollected = remember(allBookings) {
@@ -209,7 +210,7 @@ fun BarberScreen(
 
                     // Salon Owner Logout button
                     IconButton(
-                        onClick = { viewModel.logoutSalonOwner() },
+                        onClick = { showLogoutConfirmDialog = true },
                         modifier = Modifier
                             .size(32.dp)
                             .testTag("btn_barber_logout")
@@ -226,6 +227,30 @@ fun BarberScreen(
         }
 
         // Tab Row
+        if (showLogoutConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = { showLogoutConfirmDialog = false },
+                title = { Text("Confirm Log Out", fontWeight = FontWeight.Bold) },
+                text = { Text("Are you sure you want to log out from your Salon Owner account?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showLogoutConfirmDialog = false
+                            viewModel.logoutSalonOwner()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
+                    ) {
+                        Text("Log Out", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { showLogoutConfirmDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = MaterialTheme.colorScheme.surface,

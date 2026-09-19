@@ -288,13 +288,18 @@ fun AuthDialog(
 
                         OutlinedTextField(
                             value = customerPhoneInput,
-                            onValueChange = { customerPhoneInput = it },
+                            onValueChange = {
+                                customerPhoneInput = it.filter { char -> char.isDigit() }.take(10)
+                            },
                             label = { Text(StringRes.phoneNumber.tr(language)) },
-                            placeholder = { Text(StringRes.phonePlaceholder.tr(language)) },
+                            placeholder = { Text("98765 43210") },
+                            prefix = {
+                                Text("🇮🇳 +91 ", fontWeight = FontWeight.Bold, color = AmberPrimary)
+                            },
                             leadingIcon = {
                                 Icon(Icons.Default.Phone, contentDescription = null, tint = AmberPrimary)
                             },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().testTag("input_customer_phone"),
                             shape = RoundedCornerShape(10.dp)
@@ -317,21 +322,13 @@ fun AuthDialog(
                             shape = RoundedCornerShape(10.dp)
                         )
 
-                        errorMessage?.let { err ->
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(text = err, color = AccentRed, fontSize = 12.sp)
-                        }
-
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Button(
                             onClick = {
-                                if (customerPhoneInput.isBlank() || customerPasswordInput.isBlank()) {
-                                    errorMessage = "Please enter both mobile phone and password"
-                                } else {
-                                    onCustomerLogin(customerNameInput, customerPhoneInput, customerPasswordInput) { err ->
-                                        errorMessage = err
-                                    }
+                                val digits = customerPhoneInput.filter { it.isDigit() }.take(10)
+                                if (digits.length == 10 && customerPasswordInput.isNotBlank()) {
+                                    onCustomerLogin(customerNameInput, "+91$digits", customerPasswordInput) { _ -> }
                                 }
                             },
                             shape = RoundedCornerShape(10.dp),
@@ -357,20 +354,6 @@ fun AuthDialog(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text("Login with Phone OTP", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                             }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Quick Demo Customer
-                        OutlinedButton(
-                            onClick = {
-                                onQuickSwitchRole("CUSTOMER")
-                                onDismiss()
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth().testTag("btn_quick_customer_demo")
-                        ) {
-                            Text("⚡ Quick Demo Customer Login", color = AmberPrimary, fontSize = 12.sp)
                         }
                     }
 
@@ -416,13 +399,18 @@ fun AuthDialog(
                         // Registered Phone Input
                         OutlinedTextField(
                             value = salonPhoneInput,
-                            onValueChange = { salonPhoneInput = it },
+                            onValueChange = {
+                                salonPhoneInput = it.filter { char -> char.isDigit() }.take(10)
+                            },
                             label = { Text(StringRes.phoneNumber.tr(language)) },
-                            placeholder = { Text("017XXXXXXXX") },
+                            placeholder = { Text("98765 43210") },
+                            prefix = {
+                                Text("🇮🇳 +91 ", fontWeight = FontWeight.Bold, color = AccentBronze)
+                            },
                             leadingIcon = {
                                 Icon(Icons.Default.Phone, contentDescription = null, tint = AccentBronze)
                             },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().testTag("input_salon_owner_phone"),
                             shape = RoundedCornerShape(10.dp)
@@ -446,21 +434,13 @@ fun AuthDialog(
                             shape = RoundedCornerShape(10.dp)
                         )
 
-                        errorMessage?.let { err ->
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(text = err, color = AccentRed, fontSize = 12.sp)
-                        }
-
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Button(
                             onClick = {
-                                if (salonIdInput.isBlank() || salonPhoneInput.isBlank() || salonPasswordInput.isBlank()) {
-                                    errorMessage = "Please enter Salon ID, Phone and Password"
-                                } else {
-                                    onSalonLogin(salonIdInput, salonPhoneInput, salonPasswordInput) { err ->
-                                        errorMessage = err
-                                    }
+                                val digits = salonPhoneInput.filter { it.isDigit() }.take(10)
+                                if (salonIdInput.isNotBlank() && digits.length == 10 && salonPasswordInput.isNotBlank()) {
+                                    onSalonLogin(salonIdInput, "+91$digits", salonPasswordInput) { _ -> }
                                 }
                             },
                             shape = RoundedCornerShape(10.dp),
@@ -491,35 +471,6 @@ fun AuthDialog(
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
-
-                        // Demo Credentials Chip / Quick Fill
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            SuggestionChip(
-                                onClick = {
-                                    salonIdInput = "SALON-101"
-                                    salonPhoneInput = "01700000000"
-                                    salonPasswordInput = "123"
-                                    errorMessage = null
-                                },
-                                label = { Text("Demo: SALON-101 (123)", fontSize = 11.sp) },
-                                modifier = Modifier.weight(1f)
-                            )
-                            SuggestionChip(
-                                onClick = {
-                                    salonIdInput = "SALON-202"
-                                    salonPhoneInput = "9876543210"
-                                    salonPasswordInput = "pass"
-                                    errorMessage = null
-                                },
-                                label = { Text("Demo: SALON-202 (pass)", fontSize = 11.sp) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
 
                         // App Creator Panel Hub button (for the person who creates app and provides IDs)
                         OutlinedButton(

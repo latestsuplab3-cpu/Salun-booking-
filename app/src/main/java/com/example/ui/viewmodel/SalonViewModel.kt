@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.SalonDatabase
@@ -15,9 +16,29 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+data class CustomerLocation(
+    val address: String = "Flat 4B, Park Street",
+    val locality: String = "Park Circus",
+    val city: String = "Kolkata",
+    val state: String = "West Bengal",
+    val pincode: String = "700016"
+)
+
 class SalonViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: SalonRepository
+    private val prefs = application.getSharedPreferences("salon_app_session", Context.MODE_PRIVATE)
+
+    companion object {
+        private const val KEY_ACTIVE_PANEL = "active_panel"
+        private const val KEY_USER_PHONE = "user_phone"
+        private const val KEY_SALON_ID = "salon_id"
+        private const val KEY_CUST_ADDR = "cust_address"
+        private const val KEY_CUST_LOCALITY = "cust_locality"
+        private const val KEY_CUST_CITY = "cust_city"
+        private const val KEY_CUST_STATE = "cust_state"
+        private const val KEY_CUST_PINCODE = "cust_pincode"
+    }
 
     val standardSlots = listOf(
         "09:00 AM",
@@ -93,6 +114,53 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
     private val _lastSupabaseSyncStatus = MutableStateFlow<String?>("Connected (Project: llhyjuqthwsdmauvucqc)")
     val lastSupabaseSyncStatus: StateFlow<String?> = _lastSupabaseSyncStatus.asStateFlow()
 
+    // Customer location state
+    private val _customerLocation = MutableStateFlow(
+        CustomerLocation(
+            address = prefs.getString(KEY_CUST_ADDR, "Flat 4B, Greenfield Heights, Park Street") ?: "Flat 4B, Greenfield Heights, Park Street",
+            locality = prefs.getString(KEY_CUST_LOCALITY, "Park Circus") ?: "Park Circus",
+            city = prefs.getString(KEY_CUST_CITY, "Kolkata") ?: "Kolkata",
+            state = prefs.getString(KEY_CUST_STATE, "West Bengal") ?: "West Bengal",
+            pincode = prefs.getString(KEY_CUST_PINCODE, "700016") ?: "700016"
+        )
+    )
+    val customerLocation: StateFlow<CustomerLocation> = _customerLocation.asStateFlow()
+
+    fun updateCustomerLocation(address: String, locality: String, city: String, state: String, pincode: String) {
+        val updated = CustomerLocation(
+            address = address.trim(),
+            locality = locality.trim(),
+            city = city.trim(),
+            state = state.trim(),
+            pincode = pincode.trim()
+        )
+        _customerLocation.value = updated
+        prefs.edit()
+            .putString(KEY_CUST_ADDR, updated.address)
+            .putString(KEY_CUST_LOCALITY, updated.locality)
+            .putString(KEY_CUST_CITY, updated.city)
+            .putString(KEY_CUST_STATE, updated.state)
+            .putString(KEY_CUST_PINCODE, updated.pincode)
+            .apply()
+        _userFeedbackMessage.value = "Location updated successfully!"
+    }
+
+    private fun saveSession(panel: String, phone: String?, salonId: String?) {
+        prefs.edit()
+            .putString(KEY_ACTIVE_PANEL, panel)
+            .putString(KEY_USER_PHONE, phone)
+            .putString(KEY_SALON_ID, salonId)
+            .apply()
+    }
+
+    private fun clearSession() {
+        prefs.edit()
+            .remove(KEY_ACTIVE_PANEL)
+            .remove(KEY_USER_PHONE)
+            .remove(KEY_SALON_ID)
+            .apply()
+    }
+
     init {
         val database = SalonDatabase.getDatabase(application)
         repository = SalonRepository(database)
@@ -122,8 +190,48 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
             emptyList()
         )
 
+        val savedPanel = prefs.getString(KEY_ACTIVE_PANEL, null)
+        val savedPhone = prefs.getString(KEY_USER_PHONE, null)
+        val savedSalonId = prefs.getString(KEY_SALON_ID, null)
+
         viewModelScope.launch {
             repository.initializeDefaultDataIfEmpty()
+
+            // Restore persistent login session across all panels
+            if (!savedPanel.isNullOrBlank() && savedPanel != "LOGIN_SELECTOR") {
+                when (savedPanel) {
+                    "CUSTOMER" -> {
+                        if (!savedPhone.isNullOrBlank()) {
+                            val user = repository.getUserByPhone(savedPhone)
+                            if (user != null) {
+                                _currentUser.value = user
+                                _activePanel.value = "CUSTOMER"
+                            }
+                        }
+                    }
+                    "BARBER" -> {
+                        if (!savedSalonId.isNullOrBlank()) {
+                            val license = repository.getSalonLicenseById(savedSalonId)
+                            _currentSalonLicense.value = license
+                        }
+                        if (!savedPhone.isNullOrBlank()) {
+                            val user = repository.getUserByPhone(savedPhone)
+                            _currentUser.value = user
+                        }
+                        _activePanel.value = "BARBER"
+                    }
+                    "MASTER" -> {
+                        val masterUser = UserEntity(
+                            phone = "9899999999",
+                            name = "App Creator & Master Admin",
+                            password = "admin",
+                            role = "MASTER"
+                        )
+                        _currentUser.value = masterUser
+                        _activePanel.value = "MASTER"
+                    }
+                }
+            }
         }
 
         // Collect notifications reactively based on active panel
@@ -150,6 +258,11 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setPanel(panel: String) {
         _activePanel.value = panel
+        if (panel == "LOGIN_SELECTOR") {
+            clearSession()
+        } else {
+            saveSession(panel, _currentUser.value?.phone, _currentSalonLicense.value?.salonId)
+        }
     }
 
     fun clearFeedback() {
@@ -206,6 +319,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     _currentUser.value = updatedUser
                     _activePanel.value = "CUSTOMER"
+                    saveSession("CUSTOMER", updatedUser.phone, null)
                     _userFeedbackMessage.value = when (lang) {
                         AppLanguage.BENGALI -> "স্বাগতম, ${updatedUser.name}! প্রি-অর্ডার চালিয়ে যান।"
                         AppLanguage.HINDI -> "स्वागत है, ${updatedUser.name}! प्री-ऑर्डर जारी रखें।"
@@ -230,6 +344,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                 val created = repository.getUserByPhone(trimmedPhone) ?: newUser
                 _currentUser.value = created
                 _activePanel.value = "CUSTOMER"
+                saveSession("CUSTOMER", created.phone, null)
                 _userFeedbackMessage.value = when (lang) {
                     AppLanguage.BENGALI -> "রেজিস্ট্রেশন সফল! স্বাগতম, ${created.name}!"
                     AppLanguage.HINDI -> "पंजीकरण सफल! स्वागत है, ${created.name}!"
@@ -266,6 +381,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     _currentUser.value = updatedUser
                     _activePanel.value = updatedUser.role
+                    saveSession(updatedUser.role, updatedUser.phone, null)
                     onSuccess()
                 } else {
                     onError(when (lang) {
@@ -293,6 +409,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                 val created = repository.getUserByPhone(trimmedPhone) ?: newUser
                 _currentUser.value = created
                 _activePanel.value = expectedRole
+                saveSession(expectedRole, created.phone, null)
                 onSuccess()
             }
         }
@@ -316,11 +433,13 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                     u
                 } else user
                 _currentUser.value = updatedUser
-                _activePanel.value = if (expectedRole.isNotBlank()) expectedRole else user.role
+                val finalRole = if (expectedRole.isNotBlank()) expectedRole else user.role
+                _activePanel.value = finalRole
                 if (expectedRole == "BARBER" && !salonId.isNullOrBlank()) {
                     val license = repository.getSalonLicenseById(salonId)
                     _currentSalonLicense.value = license
                 }
+                saveSession(finalRole, updatedUser.phone, salonId)
                 onSuccess()
             } else {
                 val defaultRoleName = when (lang) {
@@ -356,6 +475,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                     val license = repository.getSalonLicenseById(salonId)
                     _currentSalonLicense.value = license
                 }
+                saveSession(expectedRole, created.phone, salonId)
                 onSuccess()
             }
         }
@@ -371,6 +491,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                         _activePanel.value = "BARBER"
                         val defaultLicense = repository.getSalonLicenseById("SALON-101")
                         _currentSalonLicense.value = defaultLicense
+                        saveSession("BARBER", user.phone, "SALON-101")
                     }
                 }
                 "CUSTOMER" -> {
@@ -379,6 +500,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                         _currentUser.value = user
                         _activePanel.value = "CUSTOMER"
                         _currentSalonLicense.value = null
+                        saveSession("CUSTOMER", user.phone, null)
                     }
                 }
                 "MASTER" -> {
@@ -391,6 +513,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                     _currentUser.value = masterUser
                     _currentSalonLicense.value = null
                     _activePanel.value = "MASTER"
+                    saveSession("MASTER", "9899999999", null)
                 }
                 else -> {
                     logoutToSelector()
@@ -468,6 +591,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
             _currentUser.value = barberUser
             _currentSalonLicense.value = license
             _activePanel.value = "BARBER"
+            saveSession("BARBER", cleanPhone, cleanId)
             _userFeedbackMessage.value = "Welcome ${license.salonName}! Logged in as Salon Owner."
             onSuccess()
         }
@@ -539,6 +663,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
         _currentUser.value = null
         _currentSalonLicense.value = null
         _activePanel.value = "LOGIN_SELECTOR"
+        clearSession()
         _userFeedbackMessage.value = "Logged out successfully."
     }
 
@@ -546,6 +671,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
         _currentUser.value = null
         _currentSalonLicense.value = null
         _activePanel.value = "LOGIN_SELECTOR"
+        clearSession()
         _userFeedbackMessage.value = "Salon owner logged out."
     }
 
@@ -553,6 +679,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
         _currentUser.value = null
         _currentSalonLicense.value = null
         _activePanel.value = "LOGIN_SELECTOR"
+        clearSession()
         _userFeedbackMessage.value = "Logged out. Please choose your login portal."
     }
 
@@ -587,6 +714,7 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                 _currentUser.value = masterUser
                 _currentSalonLicense.value = null
                 _activePanel.value = "MASTER"
+                saveSession("MASTER", "9899999999", null)
                 _userFeedbackMessage.value = "Welcome, App Creator!"
                 onSuccess()
             } else {

@@ -246,15 +246,17 @@ fun CustomerPreOrderLoginSheet(
             OutlinedTextField(
                 value = phoneInput,
                 onValueChange = {
-                    phoneInput = it
-                    errorMessage = null
+                    phoneInput = it.filter { char -> char.isDigit() }.take(10)
                 },
                 label = { Text(StringRes.phoneNumber.tr(language)) },
-                placeholder = { Text("017XXXXXXXX") },
+                placeholder = { Text("98765 43210") },
+                prefix = {
+                    Text("🇮🇳 +91 ", fontWeight = FontWeight.Bold, color = AmberPrimary)
+                },
                 leadingIcon = {
                     Icon(Icons.Default.Phone, contentDescription = null, tint = AmberPrimary)
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -273,7 +275,6 @@ fun CustomerPreOrderLoginSheet(
                 value = passwordInput,
                 onValueChange = {
                     passwordInput = it
-                    errorMessage = null
                 },
                 label = { Text(StringRes.password.tr(language)) },
                 placeholder = { Text(StringRes.passwordPlaceholder.tr(language)) },
@@ -302,70 +303,19 @@ fun CustomerPreOrderLoginSheet(
                 )
             )
 
-            // Error display
-            AnimatedVisibility(visible = errorMessage != null) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = AccentRed.copy(alpha = 0.12f)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.ErrorOutline,
-                            contentDescription = null,
-                            tint = AccentRed,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = errorMessage ?: "",
-                            color = AccentRed,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-
             Spacer(modifier = Modifier.height(18.dp))
 
             // Login / Register & Proceed button
             Button(
                 onClick = {
-                    if (nameInput.isBlank()) {
-                        errorMessage = when (language) {
-                            AppLanguage.ENGLISH -> "Please enter your full name"
-                            AppLanguage.HINDI -> "कृपया अपना पूरा नाम दर्ज करें"
-                            AppLanguage.BENGALI -> "দয়া করে আপনার সম্পূর্ণ নাম লিখুন"
-                        }
-                        return@Button
-                    }
-                    if (phoneInput.isBlank() || phoneInput.length < 8) {
-                        errorMessage = when (language) {
-                            AppLanguage.ENGLISH -> "Please enter a valid mobile number (e.g., 9876543210)"
-                            AppLanguage.HINDI -> "कृपया मान्य मोबाइल नंबर दर्ज करें (उदा. 9876543210)"
-                            AppLanguage.BENGALI -> "দয়া করে সঠিক মোবাইল নম্বর লিখুন (যেমন: 9876543210)"
-                        }
-                        return@Button
-                    }
-                    if (passwordInput.isBlank() || passwordInput.length < 3) {
-                        errorMessage = when (language) {
-                            AppLanguage.ENGLISH -> "Password must be at least 3 characters"
-                            AppLanguage.HINDI -> "पासवर्ड कम से कम 3 अक्षरों का होना चाहिए"
-                            AppLanguage.BENGALI -> "পাসওয়ার্ড অন্তত ৩ অক্ষরের হতে হবে"
-                        }
+                    val digits = phoneInput.filter { it.isDigit() }.take(10)
+                    if (nameInput.isBlank() || digits.length != 10 || passwordInput.isBlank()) {
                         return@Button
                     }
 
                     isLoading = true
-                    onLoginSubmit(nameInput, phoneInput, passwordInput) { err ->
+                    onLoginSubmit(nameInput, "+91$digits", passwordInput) { _ ->
                         isLoading = false
-                        errorMessage = err
                     }
                 },
                 enabled = !isLoading,
@@ -435,65 +385,6 @@ fun CustomerPreOrderLoginSheet(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.sp
                     )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Fast Demo Login option
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, DarkBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = when (language) {
-                                AppLanguage.ENGLISH -> "Want to test?"
-                                AppLanguage.HINDI -> "परीक्षण करना चाहते हैं?"
-                                AppLanguage.BENGALI -> "টেস্ট করতে চান?"
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextMuted
-                        )
-                        Text(
-                            text = when (language) {
-                                AppLanguage.ENGLISH -> "Try 1-click Demo Customer Login"
-                                AppLanguage.HINDI -> "1-क्लिक डेमो ग्राहक लॉगिन आज़माएं"
-                                AppLanguage.BENGALI -> "১-ক্লিকে ডেমো কাস্টমার দিয়ে ট্রাই করুন"
-                            },
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            onQuickDemoCustomer()
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier.testTag("btn_quick_demo_customer")
-                    ) {
-                        Text(
-                            text = when (language) {
-                                AppLanguage.ENGLISH -> "⚡ Demo Login"
-                                AppLanguage.HINDI -> "⚡ डेमो लॉगिन"
-                                AppLanguage.BENGALI -> "⚡ ডেমো লগইন"
-                            },
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AmberPrimary
-                        )
-                    }
                 }
             }
 

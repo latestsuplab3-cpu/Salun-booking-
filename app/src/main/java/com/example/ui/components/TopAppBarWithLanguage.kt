@@ -38,6 +38,7 @@ fun TopAppBarWithLanguage(
     onOpenCreatorHub: () -> Unit = {}
 ) {
     var languageMenuExpanded by remember { mutableStateOf(false) }
+    var showSalonLogoutConfirmDialog by remember { mutableStateOf(false) }
 
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -166,29 +167,30 @@ fun TopAppBarWithLanguage(
                     }
 
                     if (activePanel == "BARBER") {
-                        // Switch Panel Quick Toggle Pill for Barber
+                        // Log Out button with Confirmation Dialog for Salon Owner Panel
                         Button(
-                            onClick = onSwitchPanel,
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            onClick = { showSalonLogoutConfirmDialog = true },
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
                             shape = RoundedCornerShape(20.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = AccentBronze.copy(alpha = 0.2f)
+                                containerColor = AccentRed.copy(alpha = 0.15f),
+                                contentColor = AccentRed
                             ),
                             modifier = Modifier
                                 .height(34.dp)
-                                .testTag("btn_switch_panel")
+                                .testTag("btn_salon_logout")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.SwapHoriz,
-                                contentDescription = "Switch Panel",
-                                tint = AccentBronze,
-                                modifier = Modifier.size(16.dp)
+                                imageVector = Icons.Default.Logout,
+                                contentDescription = "Log Out",
+                                tint = AccentRed,
+                                modifier = Modifier.size(15.dp)
                             )
-                            Spacer(modifier = Modifier.width(3.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Customer",
+                                text = "Log Out",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = AccentBronze
+                                color = AccentRed
                             )
                         }
 
@@ -296,6 +298,42 @@ fun TopAppBarWithLanguage(
                 }
             }
         }
+    }
+
+    if (showSalonLogoutConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showSalonLogoutConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Confirm Log Out",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to log out from the Salon Owner panel?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showSalonLogoutConfirmDialog = false
+                        onSwitchPanel()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
+                ) {
+                    Text("Log Out", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showSalonLogoutConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     if (languageMenuExpanded) {

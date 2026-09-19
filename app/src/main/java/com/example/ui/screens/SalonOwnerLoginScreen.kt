@@ -68,21 +68,12 @@ fun SalonOwnerLoginScreen(
     val scrollState = rememberScrollState()
 
     fun performLogin() {
-        errorMessage = null
         val cleanId = salonIdInput.trim()
-        val cleanPhone = phoneInput.trim()
+        val digits = phoneInput.filter { it.isDigit() }.take(10)
+        val cleanPhone = "+91$digits"
         val cleanPass = passwordInput.trim()
 
-        if (cleanId.isBlank()) {
-            errorMessage = "Please enter your Salon License ID."
-            return
-        }
-        if (cleanPhone.isBlank()) {
-            errorMessage = "Please enter your registered owner phone number."
-            return
-        }
-        if (cleanPass.isBlank()) {
-            errorMessage = "Please enter your password."
+        if (cleanId.isBlank() || digits.length != 10 || cleanPass.isBlank()) {
             return
         }
 
@@ -94,9 +85,8 @@ fun SalonOwnerLoginScreen(
             onSuccess = {
                 isLoading = false
             },
-            onError = { err ->
+            onError = { _ ->
                 isLoading = false
-                errorMessage = err
             }
         )
     }
@@ -325,11 +315,13 @@ fun SalonOwnerLoginScreen(
                 OutlinedTextField(
                     value = phoneInput,
                     onValueChange = {
-                        phoneInput = it
-                        errorMessage = null
+                        phoneInput = it.filter { char -> char.isDigit() }.take(10)
                     },
                     label = { Text(StringRes.phoneNumber.tr(language)) },
-                    placeholder = { Text(StringRes.ownerPhonePlaceholder.tr(language)) },
+                    placeholder = { Text("98765 43210") },
+                    prefix = {
+                        Text("🇮🇳 +91 ", fontWeight = FontWeight.Bold, color = AccentBronze)
+                    },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Phone,
@@ -346,7 +338,7 @@ fun SalonOwnerLoginScreen(
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Phone,
+                        keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Next
                     ),
                     keyboardActions = KeyboardActions(
@@ -403,35 +395,6 @@ fun SalonOwnerLoginScreen(
                         .testTag("input_salon_owner_pass"),
                     shape = RoundedCornerShape(12.dp)
                 )
-
-                // Error Message banner
-                errorMessage?.let { err ->
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Surface(
-                        color = AccentRed.copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, AccentRed.copy(alpha = 0.4f)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth().testTag("banner_login_error")
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ErrorOutline,
-                                contentDescription = "Error",
-                                tint = AccentRed,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = err,
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                                color = AccentRed
-                            )
-                        }
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(18.dp))
 
@@ -519,133 +482,6 @@ fun SalonOwnerLoginScreen(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.sp
                     )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(18.dp))
-
-        // Quick 1-Tap Demo Credentials Section
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Bolt,
-                        contentDescription = null,
-                        tint = AmberPrimary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = StringRes.quickDemoCredentialsLabel.tr(language),
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Demo Option 1: SALON-101
-                Surface(
-                    onClick = {
-                        salonIdInput = "SALON-101"
-                        phoneInput = "01700000000"
-                        passwordInput = "123"
-                        errorMessage = null
-                    },
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, AmberPrimary.copy(alpha = 0.3f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("btn_quick_demo_salon_101")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = "💈 Style Master Salon",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "ID: SALON-101  •  Phone: 01700000000  •  Pass: 123",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
-                            )
-                        }
-                        Surface(
-                            color = AmberPrimary.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                text = "FILL",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AmberPrimary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Demo Option 2: SALON-202
-                Surface(
-                    onClick = {
-                        salonIdInput = "SALON-202"
-                        phoneInput = "9876543210"
-                        passwordInput = "pass"
-                        errorMessage = null
-                    },
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, AccentBronze.copy(alpha = 0.3f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("btn_quick_demo_salon_202")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = "✂️ Royal Grooming Studio",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "ID: SALON-202  •  Phone: 9876543210  •  Pass: pass",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
-                            )
-                        }
-                        Surface(
-                            color = AccentBronze.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                text = "FILL",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AccentBronze,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
                 }
             }
         }

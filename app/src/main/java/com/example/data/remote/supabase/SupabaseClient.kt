@@ -1,6 +1,7 @@
 package com.example.data.remote.supabase
 
 import android.util.Log
+import com.example.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -13,8 +14,8 @@ import java.util.concurrent.TimeUnit
 
 object SupabaseConfig {
     const val PROJECT_ID = "llhyjuqthwsdmauvucqc"
-    const val BASE_URL = "https://llhyjuqthwsdmauvucqc.supabase.co"
-    const val API_KEY = "sb_publishable_paPvi-O_zUaqU5XovfFeZA_9sZKzdIk"
+    val BASE_URL: String = if (BuildConfig.SUPABASE_URL.isNotBlank()) BuildConfig.SUPABASE_URL else "https://llhyjuqthwsdmauvucqc.supabase.co"
+    val API_KEY: String = if (BuildConfig.SUPABASE_ANON_KEY.isNotBlank()) BuildConfig.SUPABASE_ANON_KEY else "sb_publishable_paPvi-O_zUaqU5XovfFeZA_9sZKzdIk"
 }
 
 /**
