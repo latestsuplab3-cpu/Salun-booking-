@@ -152,6 +152,21 @@ fun BarberScreen(
                         )
                     }
 
+                    // Supabase Cloud Sync Button
+                    IconButton(
+                        onClick = { viewModel.syncNowToSupabase() },
+                        modifier = Modifier
+                            .size(32.dp)
+                            .testTag("btn_barber_sync_supabase")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudSync,
+                            contentDescription = "Sync with Supabase Cloud",
+                            tint = Color(0xFF3ECF8E),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
                     // Small Profile Icon in top right corner of banner
                     IconButton(
                         onClick = onOpenProfile,

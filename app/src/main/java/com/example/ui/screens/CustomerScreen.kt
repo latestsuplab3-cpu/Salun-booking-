@@ -27,6 +27,7 @@ import com.example.data.model.ReviewEntity
 import com.example.data.model.ServiceItemEntity
 import com.example.data.model.UserEntity
 import com.example.ui.components.CustomerPreOrderLoginSheet
+import com.example.ui.components.FirebaseOtpDialog
 import com.example.ui.components.PreOrderSheet
 import com.example.ui.components.ReviewDialog
 import com.example.ui.localization.AppLanguage
@@ -54,6 +55,7 @@ fun CustomerScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var showPreOrderSheet by remember { mutableStateOf(false) }
     var showPreOrderLoginSheet by remember { mutableStateOf(false) }
+    var showFirebaseOtpSheet by remember { mutableStateOf(false) }
     var reviewBookingTarget by remember { mutableStateOf<BookingEntity?>(null) }
 
     // Filter customer's own bookings
@@ -255,6 +257,23 @@ fun CustomerScreen(
             onQuickDemoCustomer = {
                 viewModel.quickSwitchUser("CUSTOMER")
                 showPreOrderLoginSheet = false
+                showPreOrderSheet = true
+            },
+            onOpenOtpLogin = {
+                showPreOrderLoginSheet = false
+                showFirebaseOtpSheet = true
+            }
+        )
+    }
+
+    if (showFirebaseOtpSheet) {
+        FirebaseOtpDialog(
+            targetRole = "CUSTOMER",
+            language = language,
+            viewModel = viewModel,
+            onDismiss = { showFirebaseOtpSheet = false },
+            onLoginSuccess = {
+                showFirebaseOtpSheet = false
                 showPreOrderSheet = true
             }
         )

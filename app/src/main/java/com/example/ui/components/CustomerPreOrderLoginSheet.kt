@@ -42,7 +42,8 @@ fun CustomerPreOrderLoginSheet(
     onDismiss: () -> Unit,
     onLoginSuccess: () -> Unit,
     onLoginSubmit: (name: String, phone: String, pass: String, onError: (String) -> Unit) -> Unit,
-    onQuickDemoCustomer: () -> Unit
+    onQuickDemoCustomer: () -> Unit,
+    onOpenOtpLogin: (() -> Unit)? = null
 ) {
     var nameInput by remember { mutableStateOf("") }
     var phoneInput by remember { mutableStateOf("") }
@@ -394,6 +395,45 @@ fun CustomerPreOrderLoginSheet(
                         contentDescription = null,
                         tint = Color(0xFF0F172A),
                         modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            if (onOpenOtpLogin != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+                    Text(
+                        text = "  OR / বা  ",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+                }
+
+                OutlinedButton(
+                    onClick = onOpenOtpLogin,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, AmberPrimary),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("btn_preorder_otp_login")
+                ) {
+                    Icon(Icons.Default.PhoneAndroid, contentDescription = null, tint = AmberPrimary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = when (language) {
+                            AppLanguage.ENGLISH -> "Log in with Firebase Phone OTP"
+                            AppLanguage.HINDI -> "Firebase Phone OTP से लॉगिन करें"
+                            else -> "Firebase Phone OTP দিয়ে লগইন করুন"
+                        },
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp
                     )
                 }
             }

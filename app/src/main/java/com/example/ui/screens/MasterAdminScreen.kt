@@ -57,6 +57,8 @@ fun MasterAdminScreen(
     var copiedFeedback by remember { mutableStateOf<String?>(null) }
 
     val masterPurple = Color(0xFF8B5CF6)
+    val isSyncingSupabase by viewModel.isSyncingSupabase.collectAsState()
+    val supabaseSyncStatus by viewModel.lastSupabaseSyncStatus.collectAsState()
 
     Scaffold(
         modifier = Modifier
@@ -182,6 +184,81 @@ fun MasterAdminScreen(
                                 text = "Active Licenses",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Supabase Cloud Live Sync Control
+            item {
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, Color(0xFF3ECF8E).copy(alpha = 0.4f)),
+                    modifier = Modifier.fillMaxWidth().testTag("card_supabase_cloud_sync")
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF3ECF8E).copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CloudSync,
+                                        contentDescription = null,
+                                        tint = Color(0xFF3ECF8E),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Column {
+                                    Text(
+                                        text = "Supabase Cloud Database",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Project: llhyjuqthwsdmauvucqc",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color(0xFF3ECF8E)
+                                    )
+                                }
+                            }
+
+                            Button(
+                                onClick = { viewModel.syncNowToSupabase() },
+                                enabled = !isSyncingSupabase,
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3ECF8E)),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.testTag("btn_supabase_sync_now")
+                            ) {
+                                if (isSyncingSupabase) {
+                                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Syncing...", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                                } else {
+                                    Icon(Icons.Default.Sync, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Sync Now", color = Color.White, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                }
+                            }
+                        }
+
+                        if (supabaseSyncStatus != null) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = supabaseSyncStatus ?: "",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

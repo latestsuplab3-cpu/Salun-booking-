@@ -5,6 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.SalonDatabase
 import com.example.data.model.*
+import com.example.data.remote.supabase.SupabaseClient
+import com.example.data.remote.supabase.SupabaseConfig
+import com.example.data.remote.supabase.SupabaseSyncManager
 import com.example.data.repository.SalonRepository
 import com.example.ui.localization.AppLanguage
 import kotlinx.coroutines.flow.*
@@ -82,9 +85,18 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
     private val _userFeedbackMessage = MutableStateFlow<String?>(null)
     val userFeedbackMessage: StateFlow<String?> = _userFeedbackMessage.asStateFlow()
 
+    // Supabase Cloud Sync State
+    private val supabaseSyncManager: SupabaseSyncManager
+    private val _isSyncingSupabase = MutableStateFlow(false)
+    val isSyncingSupabase: StateFlow<Boolean> = _isSyncingSupabase.asStateFlow()
+
+    private val _lastSupabaseSyncStatus = MutableStateFlow<String?>("Connected (Project: llhyjuqthwsdmauvucqc)")
+    val lastSupabaseSyncStatus: StateFlow<String?> = _lastSupabaseSyncStatus.asStateFlow()
+
     init {
         val database = SalonDatabase.getDatabase(application)
         repository = SalonRepository(database)
+        supabaseSyncManager = SupabaseSyncManager(database)
 
         services = repository.allServices.stateIn(
             viewModelScope,
@@ -273,6 +285,54 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                 val created = repository.getUserByPhone(trimmedPhone) ?: newUser
                 _currentUser.value = created
                 _activePanel.value = expectedRole
+                onSuccess()
+            }
+        }
+    }
+
+    fun loginWithFirebaseOtpSuccess(
+        phone: String,
+        expectedRole: String,
+        name: String = "",
+        salonId: String? = null,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val trimmedPhone = phone.trim()
+            val user = repository.getUserByPhone(trimmedPhone)
+            if (user != null) {
+                val updatedUser = if (name.isNotBlank() && user.name != name.trim()) {
+                    val u = user.copy(name = name.trim())
+                    repository.registerUser(u)
+                    u
+                } else user
+                _currentUser.value = updatedUser
+                _activePanel.value = if (expectedRole.isNotBlank()) expectedRole else user.role
+                if (expectedRole == "BARBER" && !salonId.isNullOrBlank()) {
+                    val license = repository.getSalonLicenseById(salonId)
+                    _currentSalonLicense.value = license
+                }
+                onSuccess()
+            } else {
+                val displayName = if (name.isNotBlank()) name.trim()
+                else if (expectedRole == "BARBER") "সেলুন ওনার ($trimmedPhone)"
+                else if (expectedRole == "MASTER") "অ্যাপ ক্রিয়েটর ($trimmedPhone)"
+                else "কাস্টমার ($trimmedPhone)"
+
+                val newUser = UserEntity(
+                    phone = trimmedPhone,
+                    name = displayName,
+                    password = "firebase_otp_verified",
+                    role = expectedRole
+                )
+                repository.registerUser(newUser)
+                val created = repository.getUserByPhone(trimmedPhone) ?: newUser
+                _currentUser.value = created
+                _activePanel.value = expectedRole
+                if (expectedRole == "BARBER" && !salonId.isNullOrBlank()) {
+                    val license = repository.getSalonLicenseById(salonId)
+                    _currentSalonLicense.value = license
+                }
                 onSuccess()
             }
         }
@@ -678,6 +738,12 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
                 AppLanguage.HINDI -> "बुकिंग की पुष्टि हुई! ₹$advance अग्रिम UPI द्वारा प्राप्त हुआ।"
                 else -> "বুকিং নিশ্চিত হয়েছে! ৫৫% অগ্রিম (₹$advance) UPI দ্বারা গৃহীত হয়েছে।"
             }
+            // Auto-sync booking to Supabase in background
+            launch {
+                try {
+                    supabaseSyncManager.syncSingleBooking(newBooking.copy(id = bookingId.toInt()))
+                } catch (_: Exception) {}
+            }
             onSuccess(bookingId)
         }
     }
@@ -729,6 +795,30 @@ class SalonViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val role = if (_activePanel.value == "BARBER") "BARBER" else "CUSTOMER"
             repository.markAllNotificationsAsRead(role)
+        }
+    }
+
+    /**
+     * Trigger immediate two-way/cloud sync to Supabase with user feedback
+     */
+    fun syncNowToSupabase(onComplete: ((Boolean, String) -> Unit)? = null) {
+        if (_isSyncingSupabase.value) return
+        viewModelScope.launch {
+            _isSyncingSupabase.value = true
+            _userFeedbackMessage.value = "Syncing with Supabase Cloud..."
+            val result = supabaseSyncManager.syncAll()
+            _isSyncingSupabase.value = false
+            if (result.isSuccess) {
+                val msg = result.getOrNull() ?: "Supabase synced successfully!"
+                _lastSupabaseSyncStatus.value = "Synced successfully just now"
+                _userFeedbackMessage.value = "Supabase Cloud Sync Successful!"
+                onComplete?.invoke(true, msg)
+            } else {
+                val errorMsg = result.exceptionOrNull()?.message ?: "Unknown sync error"
+                _lastSupabaseSyncStatus.value = "Sync error: $errorMsg"
+                _userFeedbackMessage.value = "Supabase Sync: $errorMsg"
+                onComplete?.invoke(false, errorMsg)
+            }
         }
     }
 }

@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.components.AppCreatorPanelSheet
 import com.example.ui.components.CustomerProfileSheet
+import com.example.ui.components.FirebaseOtpDialog
 import com.example.ui.components.NotificationDialog
 import com.example.ui.components.SalonOwnerProfileSheet
 import com.example.ui.components.TopAppBarWithLanguage
@@ -24,39 +25,15 @@ import com.example.ui.screens.LoginSelectorScreen
 import com.example.ui.screens.MasterAdminScreen
 import com.example.ui.theme.SalonAppTheme
 import com.example.ui.viewmodel.SalonViewModel
-import com.google.firebase.auth.FirebaseAuth
-class MainActivity : ComponentActivity() {private lateinit var auth:FirebaseAuth
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState) 
-        auth = FirebaseAuth.getInstance()
+        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent 
-        SalonAppTheme{
-        val viewModel: SalonViewModel = viewModel)
-            SalonAppMain(viewModel) }
+        setContent {
+            SalonAppTheme {
+                val viewModel: SalonViewModel = viewModel()
+                SalonAppMain(viewModel)
             }
-            val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-    override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-        //{ Code implementation for automatic verification success
-    }val options = PhoneAuthOptions.newBuilder(auth)
-    .setPhoneNumber("+91 9547625360")
-    .setTimeout(60L, TimeUnit.SECONDS)
-    .setActivity(this)
-    .setCallbacks(callbacks)
-    .build()
-PhoneAuthProvider.verifyPhoneNumber(options)
-    
-PhoneAuthProvider.verifyPhoneNumber(options)
-
-
-    override fun onVerificationFailed(e: FirebaseException) {
-        // Code implementation for handling error cases
-    }
-
-    override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
-        // Code implementation for saving verification ID and prompting for OTP input
-    }
-}
         }
     }
 }
@@ -78,6 +55,8 @@ fun SalonAppMain(viewModel: SalonViewModel) {
     var showAuthDialog by remember { mutableStateOf(false) }
     var showCustomerProfileSheet by remember { mutableStateOf(false) }
     var showAppCreatorSheet by remember { mutableStateOf(false) }
+    var showFirebaseOtpDialog by remember { mutableStateOf(false) }
+    var otpRole by remember { mutableStateOf("CUSTOMER") }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -207,6 +186,11 @@ fun SalonAppMain(viewModel: SalonViewModel) {
             },
             onLogout = {
                 viewModel.logout()
+            },
+            onOpenOtpLogin = {
+                otpRole = "CUSTOMER"
+                showCustomerLoginDialog = false
+                showFirebaseOtpDialog = true
             }
         )
     }
@@ -249,6 +233,29 @@ fun SalonAppMain(viewModel: SalonViewModel) {
             },
             onLogout = {
                 viewModel.logout()
+            },
+            onOpenOtpLogin = { role ->
+                otpRole = role
+                showAuthDialog = false
+                showFirebaseOtpDialog = true
+            }
+        )
+    }
+
+    // Firebase Phone OTP Authentication Dialog
+    if (showFirebaseOtpDialog) {
+        FirebaseOtpDialog(
+            targetRole = otpRole,
+            language = language,
+            viewModel = viewModel,
+            onDismiss = { showFirebaseOtpDialog = false },
+            onLoginSuccess = {
+                showFirebaseOtpDialog = false
+                if (otpRole == "BARBER") {
+                    viewModel.setPanel("BARBER")
+                } else if (otpRole == "MASTER") {
+                    viewModel.setPanel("MASTER")
+                }
             }
         )
     }

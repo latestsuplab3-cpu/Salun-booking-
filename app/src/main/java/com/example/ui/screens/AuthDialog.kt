@@ -41,7 +41,8 @@ fun AuthDialog(
     onSalonLogin: (salonId: String, phone: String, pass: String, onError: (String) -> Unit) -> Unit,
     onOpenCreatorHub: () -> Unit,
     onQuickSwitchRole: (String) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onOpenOtpLogin: ((role: String) -> Unit)? = null
 ) {
     // Tab selection: 0 for Customer Panel, 1 for Salon Owner Panel
     var selectedTab by remember { mutableStateOf(if (currentUser?.role == "BARBER") 1 else 0) }
@@ -344,6 +345,20 @@ fun AuthDialog(
                             )
                         }
 
+                        if (onOpenOtpLogin != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { onOpenOtpLogin("CUSTOMER") },
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, AmberPrimary),
+                                modifier = Modifier.fillMaxWidth().height(44.dp).testTag("btn_auth_customer_otp")
+                            ) {
+                                Icon(Icons.Default.PhoneAndroid, contentDescription = null, tint = AmberPrimary, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Login with Phone OTP", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(10.dp))
 
                         // Quick Demo Customer
@@ -459,6 +474,20 @@ fun AuthDialog(
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
+                        }
+
+                        if (onOpenOtpLogin != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { onOpenOtpLogin("BARBER") },
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, AccentBronze),
+                                modifier = Modifier.fillMaxWidth().height(44.dp).testTag("btn_auth_salon_otp")
+                            ) {
+                                Icon(Icons.Default.PhoneAndroid, contentDescription = null, tint = AccentBronze, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Login with Phone OTP", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
